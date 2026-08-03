@@ -15,6 +15,7 @@ public static class ConverterFactory
         List<IConverter> list = new List<IConverter>();
         list.Add(new EnumConverter());
         list.Add(new TimeSpanConverter());
+        list.Add(new DecimalConverter());
         list.Add(new ArrayConverter());
         list.Add(new EnumerableConverter());
         return list;

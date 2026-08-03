@@ -35,7 +35,7 @@ POCOs are mapped to Azure Table properties by reflection:
 - Nested objects are **flattened** with `_` as separator (`Parent.Child` → column `Parent_Child`).
 - `null` property values are skipped on serialize.
 - Value types, `string`, and `byte[]` are stored directly.
-- Dedicated converters handle **enums**, **TimeSpan**, **arrays**, and **IEnumerable** (JSON via Newtonsoft.Json).
+- Dedicated converters handle **enums**, **TimeSpan**, **decimal** (InvariantCulture string), **arrays**, and **IEnumerable** (JSON via Newtonsoft.Json).
 
 `ObjectSerializer` (POCO → properties) and `ObjectBuilder` (TableEntity → POCO) implement this mapping. Clients use them automatically.
 

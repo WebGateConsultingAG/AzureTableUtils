@@ -20,6 +20,8 @@ public class SimplePoco
 
     public double DoubleValue { set; get; }
 
+    public decimal DecimalValue { set; get; }
+
     public Guid GuidValue { set; get; }
 
     public DateTime DTValue { set; get; }
@@ -36,6 +38,7 @@ public class SimplePoco
         {
             Id = "02381012",
             DoubleValue = 2018101.00812,
+            DecimalValue = 12345.6789m,
             IntValue = 9789677,
             DTOValue = DateTimeOffset.Now,
             LongValue = 100008937819,
@@ -64,7 +67,7 @@ public class SimplePoco
         else
         {
             SimplePoco spo = (SimplePoco)obj;
-            return (Id == spo.Id) && (EnumValue == spo.EnumValue) && (spo.DoubleValue == DoubleValue) && (spo.DTOValue == DTOValue) && (spo.DTValue == DTValue) && (spo.GuidValue == GuidValue);
+            return (Id == spo.Id) && (EnumValue == spo.EnumValue) && (spo.DoubleValue == DoubleValue) && (spo.DecimalValue == DecimalValue) && (spo.DTOValue == DTOValue) && (spo.DTValue == DTValue) && (spo.GuidValue == GuidValue);
         }
     }
 
