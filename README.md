@@ -1,12 +1,27 @@
 # WebGate.Azure.TableUtils
 
-WebGate.Azure.TablesUtils provides assets to support Azure.Data.TableClient, which allows direct access of CRUD operation to the entities.
-Complex entities, arrays and IEnumerable are supported.
+Extensions for Azure.Data.Tables with typed CRUD clients. Supports complex nested entities, arrays, and IEnumerable via flattened table properties.
 
 The main focus for this implementation is the usage in Azure Functions. Therefore access to the tables is done with the ConnectionString. SAS and other authentication methods are not supported, but can be implemented when required.
 
+## Target Framework & Versioning
+
+| | |
+|---|---|
+| Target Framework | `net10.0` |
+| Package version | `10.x.x` |
+
+The **NuGet package major version matches the .NET target framework major version**.
+
+- `net10.0` → package version `10.x.x`
+- A future uplift to `net11.0` would start at package version `11.0.0`
+
+Within a major line, use minor/patch for library changes that stay on the same TFM.
+
 ---
+
 ## ExtendedAzureTableClientService
+
 The ExtendedAzureTableClientService provides a class to register and access TypedAzureTableClients as well as MultiEntityAzureTableClients.
 
 ### Create a new ExtendedAzureTableClientService
