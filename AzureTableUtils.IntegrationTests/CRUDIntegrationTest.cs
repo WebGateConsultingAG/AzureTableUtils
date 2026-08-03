@@ -32,7 +32,7 @@ public class CRUDIntegrationTest
         var tableEntityRespose = await typedTableClient.GetByIdAsync(id, "poco");
         Assert.IsNotNull(tableEntityRespose);
         Assert.AreEqual(poco, tableEntityRespose.Entity);
-        var deleteResponse = await typedTableClient.DeleteEntityAsync(id, "poco");
+        var deleteResponse = await typedTableClient.TableClient.DeleteEntityAsync("poco", id);
         Assert.AreEqual(204, deleteResponse.Status);
     }
 
@@ -54,7 +54,7 @@ public class CRUDIntegrationTest
         Assert.IsNotNull(tableEntityRespose);
         poco.EnumValue = SP.VALID;
         Assert.AreEqual(poco, tableEntityRespose.Entity);
-        var deleteResponse = await typedTableClient.DeleteEntityAsync(id, "poco");
+        var deleteResponse = await typedTableClient.TableClient.DeleteEntityAsync("poco", id);
         Assert.AreEqual(204, deleteResponse.Status);
     }
 
@@ -77,7 +77,7 @@ public class CRUDIntegrationTest
         var tableEntityRespose = await typedTableClient.GetByIdAsync(id, "poco");
         Assert.IsNotNull(tableEntityRespose);
         Assert.AreEqual(pocoUpdate, tableEntityRespose.Entity);
-        var deleteResponse = await typedTableClient.DeleteEntityAsync(id, "poco");
+        var deleteResponse = await typedTableClient.TableClient.DeleteEntityAsync("poco", id);
         Assert.AreEqual(204, deleteResponse.Status);
     }
 
@@ -94,7 +94,7 @@ public class CRUDIntegrationTest
         var tableEntityRespose = await typedTableClient.GetByIdAsync(id, "poco");
         Assert.IsNotNull(tableEntityRespose);
         Assert.AreEqual(poco, tableEntityRespose.Entity);
-        var deleteResponse = await typedTableClient.DeleteEntityAsync(id, "poco");
+        var deleteResponse = await typedTableClient.TableClient.DeleteEntityAsync("poco", id);
         Assert.AreEqual(204, deleteResponse.Status);
     }
 
@@ -112,7 +112,7 @@ public class CRUDIntegrationTest
         var allPocoResult = await typedTableClient.GetAllAsync();
         foreach (var result in allPocoResult)
         {
-            await tableClient.DeleteEntityAsync(result.RowKey, result.PartitionKey);
+            await tableClient.DeleteEntityAsync(result.PartitionKey, result.RowKey);
         }
     }
 }

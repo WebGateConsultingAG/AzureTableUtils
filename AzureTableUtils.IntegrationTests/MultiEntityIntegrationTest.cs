@@ -39,7 +39,7 @@ public class MultiEntityIntegrationTest
         Assert.AreEqual(13, allPocoResult.Count);
         foreach (var resultPoco in allPocoResult)
         {
-            await meTableClient.DeleteEntityAsync(resultPoco.RowKey, resultPoco.PartitionKey);
+            await meTableClient.TableClient.DeleteEntityAsync(resultPoco.PartitionKey, resultPoco.RowKey);
         }
         var allPocoResult2 = await meTableClient.GetAllAsync(partitionId);
         Assert.IsNotNull(allPocoResult2);
@@ -64,7 +64,7 @@ public class MultiEntityIntegrationTest
         Assert.AreEqual(7, mainWithParents.Count);
         foreach (var resultPoco in allPocoResult)
         {
-            await meTableClient.DeleteEntityAsync(resultPoco.RowKey, resultPoco.PartitionKey);
+            await meTableClient.TableClient.DeleteEntityAsync(resultPoco.PartitionKey, resultPoco.RowKey);
         }
         var allPocoResult2 = await meTableClient.GetAllAsync(partitionId);
         Assert.IsNotNull(allPocoResult2);
@@ -89,7 +89,7 @@ public class MultiEntityIntegrationTest
         Assert.AreEqual(7, mainWithParents.Count(x => x.RowKey.StartsWith("mwp_")));
         foreach (var resultPoco in allPocoResult)
         {
-            await meTableClient.DeleteEntityAsync(resultPoco.RowKey, resultPoco.PartitionKey);
+            await meTableClient.TableClient.DeleteEntityAsync(resultPoco.PartitionKey, resultPoco.RowKey);
         }
         var allPocoResult2 = await meTableClient.GetAllAsync(partitionId);
         Assert.IsNotNull(allPocoResult2);
@@ -131,7 +131,7 @@ public class MultiEntityIntegrationTest
         var allPocoResult = await meTableClient.GetAllAsync();
         foreach (var result in allPocoResult)
         {
-            await meTableClient.DeleteEntityAsync(result.RowKey, result.PartitionKey);
+            await meTableClient.TableClient.DeleteEntityAsync(result.PartitionKey, result.RowKey);
         }
     }
 

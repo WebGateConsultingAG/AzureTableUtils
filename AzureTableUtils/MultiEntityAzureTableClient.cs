@@ -7,9 +7,17 @@ namespace WebGate.Azure.TableUtils;
 /// Each registered type gets a row-key prefix (<c>{prefix}_{rowKey}</c>).
 /// </summary>
 /// <remarks>
-/// Register every type with <see cref="RegisterType{T}()"/> or <see cref="RegisterType{T}(string)"/> before insert or typed get/delete.
+/// <para>
+/// Preferred surface in 10.x: <see cref="RegisterType{T}()"/>, upserts, <see cref="GetByIdAsync{T}"/>,
+/// <see cref="GetAllAsync()"/> / <see cref="GetAllAsync(string)"/> / <see cref="GetAllByQueryAsync"/>,
+/// and <see cref="DeleteEntityByTypeAsync{T}"/>.
+/// Use <see cref="TableClient"/> for raw deletes by full row key and advanced SDK operations.
+/// </para>
+/// <para>
+/// Register every type before insert or typed get/delete.
 /// On read, the prefix of each row key must match a registered type; otherwise an exception is thrown.
 /// Mapping of nested objects, enums, decimals, arrays, and enumerables matches <see cref="TypedAzureTableClient{T}"/>.
+/// </para>
 /// </remarks>
 public class MultiEntityAzureTableClient
 {
@@ -34,7 +42,7 @@ public class MultiEntityAzureTableClient
     /// Gets the underlying Azure Tables SDK client.
     /// </summary>
     /// <returns>The same instance as <see cref="TableClient"/>.</returns>
-    [Obsolete("Use TableClient instead")]
+    [Obsolete("Use TableClient instead.")]
     public TableClient GetTableClient()
     {
         return TableClient;
@@ -74,7 +82,7 @@ public class MultiEntityAzureTableClient
     /// </exception>
     public async Task<List<TableEntityResult<object>>> GetAllAsync()
     {
-        return await GetAllByQueryAsync(null);
+        return await QueryAndMapAsync(null);
     }
 
     /// <summary>
@@ -87,7 +95,7 @@ public class MultiEntityAzureTableClient
     /// </exception>
     public async Task<List<TableEntityResult<object>>> GetAllAsync(string partitionKey)
     {
-        return await GetAllByQueryAsync(ODataFilter.PartitionKeyEquals(partitionKey));
+        return await QueryAndMapAsync(ODataFilter.PartitionKeyEquals(partitionKey));
     }
 
     /// <summary>
@@ -103,19 +111,7 @@ public class MultiEntityAzureTableClient
     /// </exception>
     public async Task<List<TableEntityResult<object>>> GetAllByQueryAsync(string? query)
     {
-        AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(query);
-
-        List<TableEntityResult<object>> items = [];
-        await foreach (var item in resultItems)
-        {
-            Type? entityType = _typeRegistry.Where(kvp => item.RowKey.StartsWith(kvp.Value + "_")).Select(kvp => kvp.Key).FirstOrDefault();
-            if (entityType == null)
-            {
-                throw new ArgumentOutOfRangeException($"No registered type found for Tableentry with ID {item.RowKey}.");
-            }
-            items.Add(TableEntityResult<object>.BuildTableEntityResultWithType(entityType, item));
-        }
-        return items;
+        return await QueryAndMapAsync(query);
     }
 
     /// <summary>
@@ -197,9 +193,49 @@ public class MultiEntityAzureTableClient
     /// <param name="completeRowKey">Full row key as stored in the table (e.g. from <see cref="TableEntityResult{T}.RowKey"/>).</param>
     /// <param name="partitionKey">Partition key.</param>
     /// <returns>The Azure Tables response.</returns>
+    /// <remarks>
+    /// <para>
+    /// Obsolete. Migrate to <c>TableClient.DeleteEntityAsync(partitionKey, rowKey)</c>.
+    /// </para>
+    /// <para>
+    /// <b>Parameter order differs:</b> this method is <c>(rowKey, partitionKey)</c>;
+    /// <see cref="TableClient"/> expects <c>(partitionKey, rowKey)</c>.
+    /// </para>
+    /// <code>
+    /// // old (this API):
+    /// await client.DeleteEntityAsync(result.RowKey, result.PartitionKey);
+    /// // new (SDK):
+    /// await client.TableClient.DeleteEntityAsync(result.PartitionKey, result.RowKey);
+    /// </code>
+    /// </remarks>
+    [Obsolete(
+        "Use TableClient.DeleteEntityAsync(partitionKey, rowKey). " +
+        "Parameter order is reversed: this method is (rowKey, partitionKey), the SDK is (partitionKey, rowKey).",
+        error: true)]
     public async Task<Response> DeleteEntityAsync(string completeRowKey, string partitionKey)
     {
         return await _tableClient.DeleteEntityAsync(partitionKey, completeRowKey);
+    }
+
+    private async Task<List<TableEntityResult<object>>> QueryAndMapAsync(string? query)
+    {
+        AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(query);
+
+        List<TableEntityResult<object>> items = [];
+        await foreach (var item in resultItems)
+        {
+            Type? entityType = _typeRegistry
+                .Where(registration => item.RowKey.StartsWith(registration.Value + "_"))
+                .Select(registration => registration.Key)
+                .FirstOrDefault();
+                
+            if (entityType == null)
+            {
+                throw new ArgumentOutOfRangeException($"No registered type found for Tableentry with ID {item.RowKey}.");
+            }
+            items.Add(TableEntityResult<object>.BuildTableEntityResultWithType(entityType, item));
+        }
+        return items;
     }
 
     private async Task<Response> UpsertAsync<T>(string rowKey, string partitionKey, T obj, TableUpdateMode updateMode)

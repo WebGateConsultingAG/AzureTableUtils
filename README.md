@@ -138,6 +138,8 @@ var typedTableClient = new TypedAzureTableClient<MyPoco>(tableClient);
 
 Underlying SDK client: `typedTableClient.TableClient` (`GetTableClient()` is obsolete).
 
+Preferred 10.x surface: **upserts + gets** (serialize/deserialize). Use `TableClient` for deletes and other raw SDK calls.
+
 Examples below use a client bound to `MyPoco`.
 
 ### GetAllAsync()
@@ -172,14 +174,9 @@ TableEntityResult<MyPoco>? poco = await typedTableClient.GetByIdAsync("9201u819"
 
 Returns `null` if not found.
 
-### GetAllByQueryAsync(string? query)
+### GetAllByQueryAsync(string? query) — obsolete
 
-```csharp
-var query = $"PartitionKey eq '{partitionKey}'";
-List<TableEntityResult<MyPoco>> pocos = await typedTableClient.GetAllByQueryAsync(query);
-```
-
-OData filter string as supported by `TableClient.QueryAsync`. Pass `null` for an unfiltered query.
+Prefer `GetAllAsync` / `GetAllAsync(partitionKey)`. For custom OData filters, query with `TableClient.QueryAsync` and map via `TableEntityResult<T>.BuildTableEntityResult<T>(…)`.
 
 ### InsertOrMergeAsync(string rowKey, string partitionKey, object obj)
 
@@ -201,10 +198,20 @@ Azure.Response result = await typedTableClient.InsertOrReplaceAsync("001", "Simp
 
 Upsert with `TableUpdateMode.Replace`.
 
-### DeleteEntityAsync(string rowKey, string partitionKey)
+### DeleteEntityAsync — obsolete (compile error)
+
+Parameter order is **reversed** vs the Azure SDK:
+
+| | 1st arg | 2nd arg |
+|---|---|---|
+| This library (obsolete) | `rowKey` | `partitionKey` |
+| `TableClient.DeleteEntityAsync` | `partitionKey` | `rowKey` |
 
 ```csharp
-Azure.Response result = await typedTableClient.DeleteEntityAsync("001", "SimplePoco");
+// old:
+await typedTableClient.DeleteEntityAsync("001", "SimplePoco");
+// new:
+await typedTableClient.TableClient.DeleteEntityAsync("SimplePoco", "001");
 ```
 
 ---
@@ -232,6 +239,8 @@ multiEntityTableClient.RegisterType<PocoWithListChildren>();
 ```
 
 Underlying SDK client: `multiEntityTableClient.TableClient` (`GetTableClient()` is obsolete).
+
+Preferred 10.x surface: **registry + upserts + gets** (+ `DeleteEntityByTypeAsync` for prefix-aware delete). Raw delete by full row key: `TableClient.DeleteEntityAsync`.
 
 Examples below assume `SimplePoco`, `MainWithParent`, and `PocoWithListChildren` are registered.
 
@@ -265,6 +274,8 @@ List<TableEntityResult<object>> allPocos = await multiEntityTableClient.GetAllBy
 List<SimplePoco> simplePocos = allPocos.Select(res => res.Entity).OfType<SimplePoco>().ToList();
 ```
 
+OData filter as supported by `TableClient.QueryAsync`. Pass `null` for an unfiltered query. Needed here so row keys are still resolved via the type registry.
+
 ### InsertOrMergeAsync\<T\>(string rowKey, string partitionKey, T obj)
 
 ```csharp
@@ -291,13 +302,21 @@ Azure.Response result = await multiEntityTableClient.DeleteEntityByTypeAsync<Sim
 
 Builds the row key from the registered prefix for `T`. Prefer this when you know the entity type.
 
-### DeleteEntityAsync(string completeRowKey, string partitionKey)
+### DeleteEntityAsync(completeRowKey, partitionKey) — obsolete (compile error)
+
+Parameter order is **reversed** vs the Azure SDK:
+
+| | 1st arg | 2nd arg |
+|---|---|---|
+| This library (obsolete) | `completeRowKey` | `partitionKey` |
+| `TableClient.DeleteEntityAsync` | `partitionKey` | `rowKey` |
 
 ```csharp
-Azure.Response result = await multiEntityTableClient.DeleteEntityAsync("SimplePoco_001", "SimplePoco");
+// old:
+await multiEntityTableClient.DeleteEntityAsync(result.RowKey, result.PartitionKey);
+// new:
+await multiEntityTableClient.TableClient.DeleteEntityAsync(result.PartitionKey, result.RowKey);
 ```
-
-Deletes by the **full** row key already stored in the table (including prefix). Useful when iterating `GetAllAsync` results (`result.RowKey`).
 
 ---
 

@@ -8,8 +8,15 @@ namespace WebGate.Azure.TableUtils;
 /// </summary>
 /// <typeparam name="T">Entity type stored in the bound table.</typeparam>
 /// <remarks>
+/// <para>
+/// Preferred surface in 10.x: <see cref="InsertOrReplaceAsync"/>, <see cref="InsertOrMergeAsync"/>,
+/// <see cref="GetByIdAsync(string, string)"/>, <see cref="GetAllAsync()"/> / <see cref="GetAllAsync(string)"/>.
+/// Use <see cref="TableClient"/> for deletes and advanced SDK operations.
+/// </para>
+/// <para>
 /// Create via <see cref="ExtendedAzureTableClientService"/> or pass an existing <see cref="TableClient"/>.
 /// Row key and partition key are always supplied by the caller (except <see cref="GetByIdAsync(string)"/>).
+/// </para>
 /// </remarks>
 public class TypedAzureTableClient<T>
 {
@@ -33,7 +40,7 @@ public class TypedAzureTableClient<T>
     /// Gets the underlying Azure Tables SDK client.
     /// </summary>
     /// <returns>The same instance as <see cref="TableClient"/>.</returns>
-    [Obsolete("Use TableClient instead")]
+    [Obsolete("Use TableClient instead.")]
     public TableClient GetTableClient()
     {
         return TableClient;
@@ -45,7 +52,7 @@ public class TypedAzureTableClient<T>
     /// <returns>All matching rows; empty list if the table has no entities.</returns>
     public async Task<List<TableEntityResult<T>>> GetAllAsync()
     {
-        return await GetAllByQueryAsync(null);
+        return await QueryAndMapAsync(null);
     }
 
     /// <summary>
@@ -55,7 +62,7 @@ public class TypedAzureTableClient<T>
     /// <returns>Matching rows; empty list if none match.</returns>
     public async Task<List<TableEntityResult<T>>> GetAllAsync(string partitionKey)
     {
-        return await GetAllByQueryAsync(ODataFilter.PartitionKeyEquals(partitionKey));
+        return await QueryAndMapAsync(ODataFilter.PartitionKeyEquals(partitionKey));
     }
 
     /// <summary>
@@ -66,16 +73,15 @@ public class TypedAzureTableClient<T>
     /// Pass <see langword="null"/> to return all entities.
     /// </param>
     /// <returns>Matching rows; empty list if none match.</returns>
+    /// <remarks>
+    /// Prefer <see cref="GetAllAsync()"/> / <see cref="GetAllAsync(string)"/>.
+    /// For custom filters, query via <see cref="TableClient"/> and map with
+    /// <see cref="TableEntityResult{T}.BuildTableEntityResult{TCreate}"/>.
+    /// </remarks>
+    [Obsolete("Prefer GetAllAsync / GetAllAsync(partitionKey). For custom filters use TableClient.QueryAsync and TableEntityResult.BuildTableEntityResult.")]
     public async Task<List<TableEntityResult<T>>> GetAllByQueryAsync(string? query)
     {
-        AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(query);
-
-        List<TableEntityResult<T>> items = [];
-        await foreach (var item in resultItems)
-        {
-            items.Add(TableEntityResult<T>.BuildTableEntityResult<T>(item));
-        }
-        return items;
+        return await QueryAndMapAsync(query);
     }
 
     /// <summary>
@@ -157,8 +163,39 @@ public class TypedAzureTableClient<T>
     /// <param name="rowKey">Row key.</param>
     /// <param name="partitionKey">Partition key.</param>
     /// <returns>The Azure Tables response.</returns>
+    /// <remarks>
+    /// <para>
+    /// Obsolete. Migrate to <c>TableClient.DeleteEntityAsync(partitionKey, rowKey)</c>.
+    /// </para>
+    /// <para>
+    /// <b>Parameter order differs:</b> this method is <c>(rowKey, partitionKey)</c>;
+    /// <see cref="TableClient"/> expects <c>(partitionKey, rowKey)</c>.
+    /// </para>
+    /// <code>
+    /// // old (this API):
+    /// await client.DeleteEntityAsync(rowKey, partitionKey);
+    /// // new (SDK):
+    /// await client.TableClient.DeleteEntityAsync(partitionKey, rowKey);
+    /// </code>
+    /// </remarks>
+    [Obsolete(
+        "Use TableClient.DeleteEntityAsync(partitionKey, rowKey). " +
+        "Parameter order is reversed: this method is (rowKey, partitionKey), the SDK is (partitionKey, rowKey).",
+        error: true)]
     public async Task<Response> DeleteEntityAsync(string rowKey, string partitionKey)
     {
         return await _tableClient.DeleteEntityAsync(partitionKey, rowKey);
+    }
+
+    private async Task<List<TableEntityResult<T>>> QueryAndMapAsync(string? query)
+    {
+        AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(query);
+
+        List<TableEntityResult<T>> items = [];
+        await foreach (var item in resultItems)
+        {
+            items.Add(TableEntityResult<T>.BuildTableEntityResult<T>(item));
+        }
+        return items;
     }
 }

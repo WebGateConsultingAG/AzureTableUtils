@@ -43,7 +43,7 @@ public class LargeDatasetIntegrationTest
         Assert.AreEqual(1500, allPocoResult.Count);
         foreach (var result in allPocoResult)
         {
-            await typedTableClient.DeleteEntityAsync(result.RowKey, result.PartitionKey);
+            await typedTableClient.TableClient.DeleteEntityAsync(result.PartitionKey, result.RowKey);
         }
         var allPocoResult2 = await typedTableClient.GetAllAsync(partitionId);
         Assert.IsNotNull(allPocoResult2);
@@ -58,7 +58,7 @@ public class LargeDatasetIntegrationTest
         var allPocoResult = await typedTableClient.GetAllAsync();
         foreach (var result in allPocoResult)
         {
-            await typedTableClient.DeleteEntityAsync(result.RowKey, result.PartitionKey);
+            await typedTableClient.TableClient.DeleteEntityAsync(result.PartitionKey, result.RowKey);
         }
     }
 }
