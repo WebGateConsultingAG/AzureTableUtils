@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebGate.Azure.TableUtils;
-
 namespace WebGate.Azure.TableUtils.Test;
 
 [TestClass]
@@ -17,30 +12,29 @@ public class SerlializerTests
         //CHECK ID
         Assert.IsTrue(allEntities.ContainsKey("Id"));
         Assert.AreEqual(allEntities["Id"], spo.Id);
-        
+
         Assert.IsTrue(allEntities.ContainsKey("IntValue"));
         Assert.AreEqual(allEntities["IntValue"], spo.IntValue);
-        
+
         Assert.IsTrue(allEntities.ContainsKey("LongValue"));
         Assert.AreEqual(allEntities["LongValue"], spo.LongValue);
 
         Assert.IsTrue(allEntities.ContainsKey("DoubleValue"));
         Assert.AreEqual(allEntities["DoubleValue"], spo.DoubleValue);
-        
+
         Assert.IsTrue(allEntities.ContainsKey("GuidValue"));
         Assert.AreEqual(allEntities["GuidValue"], spo.GuidValue);
-        
+
         Assert.IsTrue(allEntities.ContainsKey("DTValue"));
         Assert.AreEqual(allEntities["DTValue"], spo.DTValue);
-        
+
         Assert.IsTrue(allEntities.ContainsKey("DTOValue"));
         Assert.AreEqual(allEntities["DTOValue"], spo.DTOValue);
-        
 
         Assert.IsTrue(allEntities.ContainsKey("EnumValue"));
         Assert.AreEqual(allEntities["EnumValue"], spo.EnumValue.ToString());
-        
     }
+
     [TestMethod]
     public void TestExtractAllEnitiesFromSimplePocoWithNullId()
     {
@@ -48,8 +42,8 @@ public class SerlializerTests
         IDictionary<string, object> allEntities = ObjectSerializer.Serialize(spo);
         Assert.AreEqual(8, allEntities.Count);
         Assert.IsFalse(allEntities.ContainsKey("Id"));
-
     }
+
     [TestMethod]
     public void TestExtractAllEnitiesFromParentPoco()
     {
@@ -79,9 +73,8 @@ public class SerlializerTests
 
         Assert.IsTrue(allEntities.ContainsKey("Child_DTOValue"));
         Assert.AreEqual(allEntities["Child_DTOValue"], pp.Child.DTOValue);
-
-
     }
+
     [TestMethod]
     public void TestExtractAllEnitiesFromMainWithParent()
     {
@@ -115,7 +108,6 @@ public class SerlializerTests
         Assert.IsTrue(allEntities.ContainsKey("Child_DTOValue"));
         Assert.AreEqual(allEntities["Child_DTOValue"], mwp.Child.DTOValue);
 
-        
         //CHECK PARENT
         Assert.IsTrue(allEntities.ContainsKey("Parent_Id"));
         Assert.AreEqual(allEntities["Parent_Id"], mwp.Parent.Id);
@@ -148,14 +140,11 @@ public class SerlializerTests
         //CHECK ID
         Assert.IsTrue(allEntities.ContainsKey("BoolValue"));
         Assert.AreEqual(allEntities["BoolValue"], spo.BoolValue);
-        
+
         Assert.IsTrue(allEntities.ContainsKey("BooleanValue"));
         Assert.AreEqual(allEntities["BooleanValue"], spo.BooleanValue);
-        
+
         Assert.IsTrue(allEntities.ContainsKey("ByteValue"));
         Assert.AreEqual(allEntities["ByteValue"], spo.ByteValue);
-        
     }
-
 }
-

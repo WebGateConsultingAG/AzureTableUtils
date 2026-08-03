@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using Azure.Data.Tables;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebGate.Azure.TableUtils;
-
 namespace WebGate.Azure.TableUtils.Test;
+
 [TestClass]
 public class BuilderTests
 {
@@ -26,10 +21,8 @@ public class BuilderTests
         Assert.AreEqual(spo.LongValue, build.LongValue);
         Assert.AreEqual(spo.TimeSpanValue, build.TimeSpanValue);
         Assert.AreEqual(spo.EnumValue, build.EnumValue);
-
-
-
     }
+
     [TestMethod]
     public void TestBuildAllEnitiesFromSimplePocoWithNullId()
     {
@@ -41,8 +34,8 @@ public class BuilderTests
         SimplePoco build = ObjectBuilder.Build<SimplePoco>(tableEntity);
         Assert.IsNotNull(build);
         Assert.IsNull(build.Id);
-
     }
+
     [TestMethod]
     public void TestBuildAllEnitiesFromParentPoco()
     {
@@ -55,6 +48,7 @@ public class BuilderTests
         Assert.IsInstanceOfType(build, typeof(ParentPoco));
         Assert.IsNotNull(build.Child);
     }
+
     [TestMethod]
     public void TestBuildAllEnitiesFromMainWithParent()
     {
@@ -81,5 +75,4 @@ public class BuilderTests
         Assert.AreEqual(spo.BooleanValue, build.BooleanValue);
         Assert.AreEqual(spo.ByteValue, build.ByteValue);
     }
-
 }

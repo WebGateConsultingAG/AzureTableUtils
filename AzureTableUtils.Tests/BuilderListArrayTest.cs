@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebGate.Azure.TableUtils;
-using Newtonsoft.Json;
-using Azure.Data.Tables;
-
 namespace WebGate.Azure.TableUtils.Test;
 
 [TestClass]
@@ -20,6 +13,7 @@ public class BuilderListArrayTest
         Assert.AreEqual(0, allEntities.Count);
         Assert.IsNull(build.DateTimeArray);
     }
+
     [TestMethod]
     public void TestPocoWithInitializedArray()
     {

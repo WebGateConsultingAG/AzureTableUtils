@@ -1,10 +1,8 @@
-using System;
 namespace WebGate.Azure.TableUtils.Test;
 
-
-public class SimplePocoPart {
+public class SimplePocoPart
+{
     public SP EnumValue { set; get; }
-
 }
 
 public enum SP
@@ -12,6 +10,7 @@ public enum SP
     VALID,
     INVALID
 }
+
 public class SimplePoco
 {
     public string? Id { set; get; }
@@ -73,5 +72,4 @@ public class SimplePoco
     {
         return (Id != null ? Id.GetHashCode() : 0) + EnumValue.GetHashCode();
     }
-
 }

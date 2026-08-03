@@ -1,5 +1,3 @@
-using Azure.Data.Tables;
-
 namespace WebGate.Azure.TableUtils;
 
 public class ExtendedAzureTableClientService(string connectionString)
@@ -16,6 +14,7 @@ public class ExtendedAzureTableClientService(string connectionString)
         typedClient.GetTableClient().CreateIfNotExists();
         return typedClient;
     }
+
     public void AddInitializedTableClient<T>(TableClient tableClient)
     {
         var typedClient = new TypedAzureTableClient<T>(tableClient);
@@ -31,6 +30,7 @@ public class ExtendedAzureTableClientService(string connectionString)
         }
         throw new ArgumentOutOfRangeException(typeof(T).Name + " not found as registered TypedTableClient");
     }
+
     public MultiEntityAzureTableClient CreateAndRegisterMultiEntityTableClient(string tableName)
     {
         var tableClient = new TableClient(_connectionString, tableName);

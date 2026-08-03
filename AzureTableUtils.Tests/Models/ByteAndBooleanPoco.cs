@@ -1,6 +1,7 @@
-using System;
 using System.Text;
+
 namespace WebGate.Azure.TableUtils.Test;
+
 public class ByteAndBooleanPoco
 {
     public bool BoolValue { set; get; }

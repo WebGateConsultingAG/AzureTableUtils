@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebGate.Azure.TableUtils;
 using Newtonsoft.Json;
 
 namespace WebGate.Azure.TableUtils.Test;
+
 [TestClass]
 public class SerializerListArrayTest
 {
@@ -15,6 +12,7 @@ public class SerializerListArrayTest
         IDictionary<string, object> allEntities = ObjectSerializer.Serialize(spwa);
         Assert.AreEqual(0, allEntities.Count);
     }
+
     [TestMethod]
     public void TestPocoWithInitializedArray()
     {

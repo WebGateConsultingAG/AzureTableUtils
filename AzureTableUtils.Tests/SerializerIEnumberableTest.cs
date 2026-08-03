@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebGate.Azure.TableUtils;
-using Newtonsoft.Json;
-
 namespace WebGate.Azure.TableUtils.Test;
+
 [TestClass]
 public class SerializerIEnumberableTest
 {

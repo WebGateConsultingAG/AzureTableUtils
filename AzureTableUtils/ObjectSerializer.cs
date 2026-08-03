@@ -1,11 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using WebGate.Azure.TableUtils.Converter;
+﻿using WebGate.Azure.TableUtils.Converter;
+
 namespace WebGate.Azure.TableUtils;
+
 public static class ObjectSerializer
 {
-
     public static IDictionary<string, object> Serialize(object obj)
     {
         IDictionary<string, object> entities = new Dictionary<string, object>();
@@ -24,7 +22,7 @@ public static class ObjectSerializer
                 IConverter? converter = ConverterFactory.FindConverter(value.GetType());
                 if (converter == null)
                 {
-                    if (value.GetType().IsValueType  || value.GetType().Name == "Byte[]" || value.GetType().Name == "String")
+                    if (value.GetType().IsValueType || value.GetType().Name == "Byte[]" || value.GetType().Name == "String")
                     {
                         entities.Add(BuildEntityName(path, id), value);
                     }
@@ -35,12 +33,11 @@ public static class ObjectSerializer
                 }
                 else
                 {
-                    string ep = converter.GetValue(propertyInfo.GetType(),value);
+                    string ep = converter.GetValue(propertyInfo.GetType(), value);
                     entities.Add(BuildEntityName(path, id), ep);
                 }
             }
         });
-
     }
 
     private static string BuildEntityName(string? path, string id)
@@ -52,5 +49,3 @@ public static class ObjectSerializer
         return path + "_" + id;
     }
 }
-
-

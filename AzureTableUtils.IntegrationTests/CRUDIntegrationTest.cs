@@ -1,8 +1,6 @@
-using System.Net;
-using Azure.Data.Tables;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using WebGate.Azure.TableUtils;
 using WebGate.Azure.TableUtils.Test;
+
 namespace AzureTableUtils.IntegrationTests;
 
 [TestClass]
@@ -37,6 +35,7 @@ public class CRUDIntegrationTest
         var deleteResponse = await typedTableClient.DeleteEntityAsync(id, "poco");
         Assert.AreEqual(204, deleteResponse.Status);
     }
+
     [TestMethod]
     public async Task TestSimplePocoUpdateAsMerge()
     {
@@ -58,6 +57,7 @@ public class CRUDIntegrationTest
         var deleteResponse = await typedTableClient.DeleteEntityAsync(id, "poco");
         Assert.AreEqual(204, deleteResponse.Status);
     }
+
     [TestMethod]
     public async Task TestSimplePocoUpdateAsReplace()
     {
@@ -80,6 +80,7 @@ public class CRUDIntegrationTest
         var deleteResponse = await typedTableClient.DeleteEntityAsync(id, "poco");
         Assert.AreEqual(204, deleteResponse.Status);
     }
+
     [TestMethod]
     public async Task TestCascadedPocoCreateReadDeleted()
     {
