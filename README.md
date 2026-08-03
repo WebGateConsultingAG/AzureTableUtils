@@ -102,7 +102,10 @@ The table name used at registration is the lookup key.
 
 ## TableEntityResult\<T\>
 
-Results from both clients are wrapped in `TableEntityResult<T>`. For `TypedAzureTableClient<T>`, `T` is the POCO type. For `MultiEntityAzureTableClient` list queries, `T` is `object`.
+Results from both clients are wrapped in `TableEntityResult<T>`.
+For `TypedAzureTableClient<T>`, `T` is the POCO type.
+For `MultiEntityAzureTableClient`, list queries use `T = object` (concrete type at runtime via `Entity`);
+`GetByIdAsync<T>` returns `TableEntityResult<T>`.
 
 ```csharp
 public class TableEntityResult<T>(ITableEntity tableEntity, T entity)
