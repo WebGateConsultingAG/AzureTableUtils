@@ -5,15 +5,16 @@ namespace WebGate.Azure.TableUtils;
 public class MultiEntityAzureTableClient
 {
     private readonly TableClient _tableClient;
-    private readonly Dictionary<Type, string> _typeRegistry = new Dictionary<Type, string>();
+    private readonly Dictionary<Type, string> _typeRegistry = new();
 
     public MultiEntityAzureTableClient(TableClient tableClient)
     {
         _tableClient = tableClient;
     }
 
-    public TableClient GetTableClient()
-    { return _tableClient; }
+    public TableClient TableClient => _tableClient;
+
+    public TableClient GetTableClient() => TableClient;
 
     public void RegisterType<T>()
     {
@@ -54,11 +55,11 @@ public class MultiEntityAzureTableClient
 
     public async Task<TableEntityResult<T>?> GetByIdAsync<T>(string rowKey, string partitionKey)
     {
-        if (!_typeRegistry.ContainsKey(typeof(T)))
+        if (!_typeRegistry.TryGetValue(typeof(T), out string? prefix))
         {
             throw new ArgumentOutOfRangeException($"No registered type found for {typeof(T)}.");
         }
-        string prefix = _typeRegistry[typeof(T)];
+
         NullableResponse<TableEntity> tableEntity = await _tableClient.GetEntityIfExistsAsync<TableEntity>(partitionKey, prefix + "_" + rowKey);
         if (tableEntity.HasValue)
         {
@@ -67,51 +68,45 @@ public class MultiEntityAzureTableClient
         return null;
     }
 
-    public async Task<Response> InsertOrReplaceAsync(string rowKey, string partitionKey, object obj)
+    public async Task<Response> InsertOrReplaceAsync<T>(string rowKey, string partitionKey, T obj)
     {
-        if (!_typeRegistry.ContainsKey(obj.GetType()))
-        {
-            throw new ArgumentOutOfRangeException($"No registered type found for {obj.GetType()}.");
-        }
-        string prefix = _typeRegistry[obj.GetType()];
-        var properties = ObjectSerializer.Serialize(obj);
-        TableEntity tableEntity = new(properties)
-        {
-            RowKey = prefix + "_" + rowKey,
-            PartitionKey = partitionKey
-        };
-        return await _tableClient.UpsertEntityAsync(tableEntity, TableUpdateMode.Replace);
+        return await UpsertAsync(rowKey, partitionKey, obj, TableUpdateMode.Replace);
     }
 
-    public async Task<Response> InsertOrMergeAsync(string rowKey, string partitionKey, object obj)
+    public async Task<Response> InsertOrMergeAsync<T>(string rowKey, string partitionKey, T obj)
     {
-        if (!_typeRegistry.ContainsKey(obj.GetType()))
-        {
-            throw new ArgumentOutOfRangeException($"No registered type found for {obj.GetType()}.");
-        }
-        string prefix = _typeRegistry[obj.GetType()];
-
-        var properties = ObjectSerializer.Serialize(obj);
-        TableEntity tableEntity = new(properties)
-        {
-            RowKey = prefix + "_" + rowKey,
-            PartitionKey = partitionKey
-        };
-        return await _tableClient.UpsertEntityAsync(tableEntity, TableUpdateMode.Merge);
+        return await UpsertAsync(rowKey, partitionKey, obj, TableUpdateMode.Merge);
     }
 
     public async Task<Response> DeleteEntityByTypeAsync<T>(string rowKey, string partitionKey)
     {
-        if (!_typeRegistry.ContainsKey(typeof(T)))
+        if (!_typeRegistry.TryGetValue(typeof(T), out string? prefix))
         {
             throw new ArgumentOutOfRangeException($"No registered type found for {typeof(T)}.");
         }
-        string prefix = _typeRegistry[typeof(T)];
         return await _tableClient.DeleteEntityAsync(partitionKey, prefix + "_" + rowKey);
     }
 
     public async Task<Response> DeleteEntityAsync(string completeRowKey, string partitionKey)
     {
         return await _tableClient.DeleteEntityAsync(partitionKey, completeRowKey);
+    }
+
+    private async Task<Response> UpsertAsync<T>(string rowKey, string partitionKey, T obj, TableUpdateMode updateMode)
+    {
+        ArgumentNullException.ThrowIfNull(obj);
+        Type entityType = obj.GetType();
+        if (!_typeRegistry.TryGetValue(entityType, out string? prefix))
+        {
+            throw new ArgumentOutOfRangeException($"No registered type found for {entityType}.");
+        }
+
+        var properties = ObjectSerializer.Serialize(obj);
+        TableEntity tableEntity = new(properties)
+        {
+            RowKey = prefix + "_" + rowKey,
+            PartitionKey = partitionKey
+        };
+        return await _tableClient.UpsertEntityAsync(tableEntity, updateMode);
     }
 }

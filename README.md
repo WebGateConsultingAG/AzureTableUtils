@@ -136,7 +136,7 @@ await tableClient.CreateIfNotExistsAsync();
 var typedTableClient = new TypedAzureTableClient<MyPoco>(tableClient);
 ```
 
-Underlying SDK client: `typedTableClient.GetTableClient()`.
+Underlying SDK client: `typedTableClient.TableClient`.
 
 Examples below use a client bound to `MyPoco`.
 
@@ -181,7 +181,7 @@ List<TableEntityResult<MyPoco>> pocos = await typedTableClient.GetAllByQueryAsyn
 
 OData filter string as supported by `TableClient.QueryAsync`. Pass `null` for an unfiltered query.
 
-### InsertOrMergeAsync(string rowKey, string partitionKey, object obj)
+### InsertOrMergeAsync(string rowKey, string partitionKey, T obj)
 
 ```csharp
 MyPoco poco = new MyPoco();
@@ -191,7 +191,7 @@ Azure.Response result = await typedTableClient.InsertOrMergeAsync("001", "Simple
 
 Upsert with `TableUpdateMode.Merge`.
 
-### InsertOrReplaceAsync(string rowKey, string partitionKey, object obj)
+### InsertOrReplaceAsync(string rowKey, string partitionKey, T obj)
 
 ```csharp
 MyPoco poco = new MyPoco();
@@ -231,7 +231,7 @@ multiEntityTableClient.RegisterType<MainWithParent>("mwp");
 multiEntityTableClient.RegisterType<PocoWithListChildren>();
 ```
 
-Underlying SDK client: `multiEntityTableClient.GetTableClient()`.
+Underlying SDK client: `multiEntityTableClient.TableClient`.
 
 Examples below assume `SimplePoco`, `MainWithParent`, and `PocoWithListChildren` are registered.
 
@@ -265,7 +265,7 @@ List<TableEntityResult<object>> allPocos = await multiEntityTableClient.GetAllBy
 List<SimplePoco> simplePocos = allPocos.Select(res => res.Entity).OfType<SimplePoco>().ToList();
 ```
 
-### InsertOrMergeAsync(string rowKey, string partitionKey, object obj)
+### InsertOrMergeAsync\<T\>(string rowKey, string partitionKey, T obj)
 
 ```csharp
 MyPoco poco = new MyPoco();
@@ -275,7 +275,7 @@ Azure.Response result = await multiEntityTableClient.InsertOrMergeAsync("001", "
 
 Stores row key as `{prefix}_001`. Type of `obj` must be registered.
 
-### InsertOrReplaceAsync(string rowKey, string partitionKey, object obj)
+### InsertOrReplaceAsync\<T\>(string rowKey, string partitionKey, T obj)
 
 ```csharp
 MyPoco poco = new MyPoco();

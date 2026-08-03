@@ -11,9 +11,12 @@ public class TypedAzureTableClient<T>
         _tableClient = tableClient;
     }
 
-    public TableClient GetTableClient()
-    { return _tableClient; }
+    public TableClient TableClient => _tableClient;
 
+    [Obsolete("Use TableClient instead")]
+    public TableClient GetTableClient() => TableClient;
+
+    [Obsolete("Use GetAllAsync(string partitionKey) instead")]
     public async Task<List<TableEntityResult<T>>> GetAllAsync()
     {
         return await GetAllByQueryAsync(null);
@@ -52,9 +55,9 @@ public class TypedAzureTableClient<T>
         return null;
     }
 
-    public async Task<Response> InsertOrReplaceAsync(string rowKey, string partitionKey, object obj)
+    public async Task<Response> InsertOrReplaceAsync(string rowKey, string partitionKey, T obj)
     {
-        var properties = ObjectSerializer.Serialize(obj);
+        var properties = ObjectSerializer.Serialize(obj!);
         TableEntity tableEntity = new(properties)
         {
             RowKey = rowKey,
@@ -63,9 +66,9 @@ public class TypedAzureTableClient<T>
         return await _tableClient.UpsertEntityAsync(tableEntity, TableUpdateMode.Replace);
     }
 
-    public async Task<Response> InsertOrMergeAsync(string rowKey, string partitionKey, object obj)
+    public async Task<Response> InsertOrMergeAsync(string rowKey, string partitionKey, T obj)
     {
-        var properties = ObjectSerializer.Serialize(obj);
+        var properties = ObjectSerializer.Serialize(obj!);
         TableEntity tableEntity = new(properties)
         {
             RowKey = rowKey,

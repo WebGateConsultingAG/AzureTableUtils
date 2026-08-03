@@ -11,7 +11,7 @@ public class ExtendedAzureTableClientService(string connectionString)
         var tableClient = new TableClient(_connectionString, tableName);
         var typedClient = new TypedAzureTableClient<T>(tableClient);
         _tableClients.Add(typeof(T), typedClient);
-        typedClient.GetTableClient().CreateIfNotExists();
+        typedClient.TableClient.CreateIfNotExists();
         return typedClient;
     }
 
@@ -19,7 +19,7 @@ public class ExtendedAzureTableClientService(string connectionString)
     {
         var typedClient = new TypedAzureTableClient<T>(tableClient);
         _tableClients.Add(typeof(T), typedClient);
-        typedClient.GetTableClient().CreateIfNotExists();
+        typedClient.TableClient.CreateIfNotExists();
     }
 
     public TypedAzureTableClient<T> GetTypedTableClient<T>()
@@ -36,7 +36,7 @@ public class ExtendedAzureTableClientService(string connectionString)
         var tableClient = new TableClient(_connectionString, tableName);
         var meClient = new MultiEntityAzureTableClient(tableClient);
         _meTableClients.Add(tableName, meClient);
-        meClient.GetTableClient().CreateIfNotExists();
+        meClient.TableClient.CreateIfNotExists();
         return meClient;
     }
 
