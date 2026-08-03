@@ -2,16 +2,16 @@ using System.Globalization;
 
 namespace WebGate.Azure.TableUtils.Converter;
 
-public class TimeSpanConverter : IConverter
+public class DecimalConverter : IConverter
 {
     public bool IsType(Type type)
     {
-        return type == typeof(TimeSpan) || type == typeof(TimeSpan?);
+        return type == typeof(decimal) || type == typeof(decimal?);
     }
 
     public string GetValue(Type type, object value)
     {
-        return value.ToString() ?? "";
+        return ((decimal)value).ToString(CultureInfo.InvariantCulture);
     }
 
     public object? BuildValue(string? value, Type type)
@@ -20,6 +20,6 @@ public class TimeSpanConverter : IConverter
         {
             return null;
         }
-        return TimeSpan.Parse(value, CultureInfo.InvariantCulture);
+        return decimal.Parse(value, CultureInfo.InvariantCulture);
     }
 }

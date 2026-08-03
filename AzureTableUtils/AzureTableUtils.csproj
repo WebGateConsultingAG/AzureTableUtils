@@ -1,31 +1,37 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
     <PackageId>WebGate.Azure.TableUtils</PackageId>
-    <Version>0.1.1</Version>
-    <Authors>guedeWebGate</Authors>
+    <!-- Package major version matches the TargetFramework major (net10.0 → 10.x.x). -->
+    <Version>10.0.0</Version>
+    <Authors>WebGate Consulting AG</Authors>
     <Company>WebGate Consulting AG</Company>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <Description>WebGate.Azure.TablesUtils provides extensions to Azure.Data.Table, which allows direct access in the form of CRUD operation to the entities.
-Complex entities, arrays and IEnumerable are also supported.</Description>
+    <Description>Extensions for Azure.Data.Tables with typed CRUD clients. Supports complex nested entities, arrays, and IEnumerable via flattened table properties.</Description>
     <Copyright>WebGate Consulting AG</Copyright>
-    <PackageTags>Azure Table</PackageTags>
+    <PackageTags>Azure;Azure Tables;Table Storage;CRUD;POCOs</PackageTags>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <RepositoryUrl>https://github.com/WebGateConsultingAG/AzureTableUtils.git</RepositoryUrl> 
+    <RepositoryUrl>https://github.com/WebGateConsultingAG/AzureTableUtils.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Azure.Data.Tables" Version="12.8.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Azure.Data.Tables" Version="12.11.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
+
   <ItemGroup>
-      <None Include="..\README.md" Pack="true" PackagePath=""/>
+    <None Include="..\README.md" Pack="true" PackagePath="" />
   </ItemGroup>
+
 </Project>

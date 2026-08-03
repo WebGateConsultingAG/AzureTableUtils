@@ -1,9 +1,7 @@
-using System.Net;
-using Azure.Data.Tables;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using WebGate.Azure.TableUtils;
 using WebGate.Azure.TableUtils.Models;
 using WebGate.Azure.TableUtils.Test;
+
 namespace AzureTableUtils.IntegrationTests;
 
 [TestClass]
@@ -41,12 +39,13 @@ public class MultiEntityIntegrationTest
         Assert.AreEqual(13, allPocoResult.Count);
         foreach (var resultPoco in allPocoResult)
         {
-            await meTableClient.DeleteEntityAsync(resultPoco.RowKey, resultPoco.PartitionKey);
+            await meTableClient.TableClient.DeleteEntityAsync(resultPoco.PartitionKey, resultPoco.RowKey);
         }
         var allPocoResult2 = await meTableClient.GetAllAsync(partitionId);
         Assert.IsNotNull(allPocoResult2);
         Assert.AreEqual(0, allPocoResult2.Count);
     }
+
     [TestMethod]
     public async Task TestMEClientTypeExtraction()
     {
@@ -65,7 +64,7 @@ public class MultiEntityIntegrationTest
         Assert.AreEqual(7, mainWithParents.Count);
         foreach (var resultPoco in allPocoResult)
         {
-            await meTableClient.DeleteEntityAsync(resultPoco.RowKey, resultPoco.PartitionKey);
+            await meTableClient.TableClient.DeleteEntityAsync(resultPoco.PartitionKey, resultPoco.RowKey);
         }
         var allPocoResult2 = await meTableClient.GetAllAsync(partitionId);
         Assert.IsNotNull(allPocoResult2);
@@ -90,7 +89,7 @@ public class MultiEntityIntegrationTest
         Assert.AreEqual(7, mainWithParents.Count(x => x.RowKey.StartsWith("mwp_")));
         foreach (var resultPoco in allPocoResult)
         {
-            await meTableClient.DeleteEntityAsync(resultPoco.RowKey, resultPoco.PartitionKey);
+            await meTableClient.TableClient.DeleteEntityAsync(resultPoco.PartitionKey, resultPoco.RowKey);
         }
         var allPocoResult2 = await meTableClient.GetAllAsync(partitionId);
         Assert.IsNotNull(allPocoResult2);
@@ -106,16 +105,16 @@ public class MultiEntityIntegrationTest
         string partitionId = Guid.NewGuid().ToString();
         string idForEntity = Guid.NewGuid().ToString();
         var simplePoco = SimplePoco.CreateInitializedPoco();
-        var resultCreate = await meTableClient.InsertOrMergeAsync(idForEntity,partitionId,simplePoco);
-        Assert.AreEqual(204,resultCreate.Status);
-        var simplePocoGet = await meTableClient.GetByIdAsync<SimplePoco>(idForEntity,partitionId);
+        var resultCreate = await meTableClient.InsertOrMergeAsync(idForEntity, partitionId, simplePoco);
+        Assert.AreEqual(204, resultCreate.Status);
+        var simplePocoGet = await meTableClient.GetByIdAsync<SimplePoco>(idForEntity, partitionId);
         Assert.IsNotNull(simplePocoGet);
-        Assert.AreEqual(simplePoco,simplePocoGet.Entity);
+        Assert.AreEqual(simplePoco, simplePocoGet.Entity);
         var simplePocDoUpdate = simplePocoGet.Entity;
         simplePocDoUpdate.EnumValue = SP.VALID;
-        var resultUpdate = await meTableClient.InsertOrMergeAsync(idForEntity,partitionId,simplePocDoUpdate);
-        Assert.AreEqual(204,resultUpdate.Status);
-        var simplePocoUpdated = await meTableClient.GetByIdAsync<SimplePoco>(idForEntity,partitionId);
+        var resultUpdate = await meTableClient.InsertOrMergeAsync(idForEntity, partitionId, simplePocDoUpdate);
+        Assert.AreEqual(204, resultUpdate.Status);
+        var simplePocoUpdated = await meTableClient.GetByIdAsync<SimplePoco>(idForEntity, partitionId);
         Assert.IsNotNull(simplePocoUpdated);
         Assert.AreEqual(SP.VALID, simplePocoUpdated.Entity.EnumValue);
         await meTableClient.DeleteEntityByTypeAsync<SimplePoco>(idForEntity, partitionId);
@@ -123,7 +122,6 @@ public class MultiEntityIntegrationTest
         Assert.IsNotNull(allPocoResult2);
         Assert.AreEqual(0, allPocoResult2.Count);
     }
-
 
     [TestCleanup]
     public async Task TestCleanup()
@@ -133,9 +131,10 @@ public class MultiEntityIntegrationTest
         var allPocoResult = await meTableClient.GetAllAsync();
         foreach (var result in allPocoResult)
         {
-            await meTableClient.DeleteEntityAsync(result.RowKey, result.PartitionKey);
+            await meTableClient.TableClient.DeleteEntityAsync(result.PartitionKey, result.RowKey);
         }
     }
+
     private static async Task<string> GenerateDataset(MultiEntityAzureTableClient meTableClient)
     {
         var partitionId = Guid.NewGuid().ToString();
@@ -155,5 +154,4 @@ public class MultiEntityIntegrationTest
 
         return partitionId;
     }
-
 }

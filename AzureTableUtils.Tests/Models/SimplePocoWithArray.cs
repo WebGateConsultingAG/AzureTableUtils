@@ -1,5 +1,3 @@
-using System;
-
 namespace WebGate.Azure.TableUtils.Test;
 
 public class SimplePocoWithArray
@@ -11,12 +9,12 @@ public class SimplePocoWithArray
 
     public DateTime[]? DateTimeArray { set; get; }
 
-
     public static SimplePocoWithArray CreateEmptySimplePocoWithArray()
     {
         SimplePocoWithArray spwa = new();
         return spwa;
     }
+
     public static SimplePocoWithArray CreateFilledSimplePocoWithArray()
     {
         SimplePocoWithArray spwa = new();

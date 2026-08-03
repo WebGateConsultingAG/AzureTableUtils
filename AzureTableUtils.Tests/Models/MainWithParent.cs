@@ -1,4 +1,3 @@
-using System;
 namespace WebGate.Azure.TableUtils.Test;
 
 public class MainWithParent
@@ -18,7 +17,9 @@ public class MainWithParent
         };
         return mwp;
     }
-    public override bool Equals(object? other) {
+
+    public override bool Equals(object? other)
+    {
         if ((other == null) || !this.GetType().Equals(other.GetType()))
         {
             return false;
@@ -29,8 +30,9 @@ public class MainWithParent
             return po.GetHashCode() == this.GetHashCode();
         }
     }
+
     public override int GetHashCode()
     {
-        return (Id != null ? Id.GetHashCode() : 0) + (Child != null ?Child.GetHashCode():0) + (Parent != null ?Parent.GetHashCode():0);
+        return (Id != null ? Id.GetHashCode() : 0) + (Child != null ? Child.GetHashCode() : 0) + (Parent != null ? Parent.GetHashCode() : 0);
     }
 }

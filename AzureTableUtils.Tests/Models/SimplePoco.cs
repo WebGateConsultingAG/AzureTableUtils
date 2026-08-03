@@ -1,10 +1,8 @@
-using System;
 namespace WebGate.Azure.TableUtils.Test;
 
-
-public class SimplePocoPart {
+public class SimplePocoPart
+{
     public SP EnumValue { set; get; }
-
 }
 
 public enum SP
@@ -12,6 +10,7 @@ public enum SP
     VALID,
     INVALID
 }
+
 public class SimplePoco
 {
     public string? Id { set; get; }
@@ -20,6 +19,8 @@ public class SimplePoco
     public long LongValue { set; get; }
 
     public double DoubleValue { set; get; }
+
+    public decimal DecimalValue { set; get; }
 
     public Guid GuidValue { set; get; }
 
@@ -37,6 +38,7 @@ public class SimplePoco
         {
             Id = "02381012",
             DoubleValue = 2018101.00812,
+            DecimalValue = 12345.6789m,
             IntValue = 9789677,
             DTOValue = DateTimeOffset.Now,
             LongValue = 100008937819,
@@ -65,7 +67,7 @@ public class SimplePoco
         else
         {
             SimplePoco spo = (SimplePoco)obj;
-            return (Id == spo.Id) && (EnumValue == spo.EnumValue) && (spo.DoubleValue == DoubleValue) && (spo.DTOValue == DTOValue) && (spo.DTValue == DTValue) && (spo.GuidValue == GuidValue);
+            return (Id == spo.Id) && (EnumValue == spo.EnumValue) && (spo.DoubleValue == DoubleValue) && (spo.DecimalValue == DecimalValue) && (spo.DTOValue == DTOValue) && (spo.DTValue == DTValue) && (spo.GuidValue == GuidValue);
         }
     }
 
@@ -73,5 +75,4 @@ public class SimplePoco
     {
         return (Id != null ? Id.GetHashCode() : 0) + EnumValue.GetHashCode();
     }
-
 }

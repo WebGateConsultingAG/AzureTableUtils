@@ -1,9 +1,9 @@
-using System;
 using Newtonsoft.Json;
+
 namespace WebGate.Azure.TableUtils.Converter;
+
 public class ArrayConverter : IConverter
 {
-
     public bool IsType(Type type)
     {
         return type.IsArray && type.Name != "Byte[]";
@@ -13,6 +13,7 @@ public class ArrayConverter : IConverter
     {
         return JsonConvert.SerializeObject(value);
     }
+
     public object? BuildValue(string? value, Type type)
     {
         if (!string.IsNullOrEmpty(value))
@@ -21,5 +22,4 @@ public class ArrayConverter : IConverter
         }
         return null;
     }
-
 }

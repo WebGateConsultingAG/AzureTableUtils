@@ -1,13 +1,8 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using WebGate.Azure.TableUtils.Converter;
 using System.Runtime.CompilerServices;
-using Azure.Data.Tables;
-using Microsoft.VisualBasic;
-using System.Security.Cryptography;
+using WebGate.Azure.TableUtils.Converter;
 
 namespace WebGate.Azure.TableUtils;
+
 public static class ObjectBuilder
 {
     public static T Build<T>(TableEntity tableEntity)
@@ -15,74 +10,64 @@ public static class ObjectBuilder
         T result = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
         ProcessObject(result, null, tableEntity);
         return result;
-
     }
+
     public static object BuildByType(Type typeT, TableEntity tableEntity)
     {
-        object result =RuntimeHelpers.GetUninitializedObject(typeT);
+        object result = RuntimeHelpers.GetUninitializedObject(typeT);
         ProcessObject(result, null, tableEntity);
         return result;
-
     }
-    
+
     private static void ProcessObject(object obj, string? path, TableEntity tableEntity)
     {
-        obj.GetType().GetProperties().Where(propertyInfo => propertyInfo.CanRead && propertyInfo.CanWrite).ToList().ForEach(propertyInfo =>
+        foreach (var propertyInfo in EntityMapping.GetWritableProperties(obj.GetType()))
         {
             string id = propertyInfo.Name;
-            string entityName = BuildEntityName(path, id);
+            string entityName = EntityMapping.BuildEntityName(path, id);
+            Type pType = propertyInfo.PropertyType;
+
             if (tableEntity.TryGetValue(entityName, out var value))
             {
-                Type pType = propertyInfo.PropertyType;
                 IConverter? converter = ConverterFactory.FindConverter(pType);
                 if (converter != null)
                 {
-                    propertyInfo.SetValue(obj, converter.BuildValue(value != null ? value.ToString():null, pType), index: null);
+                    propertyInfo.SetValue(obj, converter.BuildValue(value?.ToString(), pType));
+                    continue;
                 }
-                else
+
+                if (value is DateTimeOffset dtoValue && IsDateTime(pType))
                 {
-                    if (value.GetType().FullName == "System.DateTimeOffset" && IsDateTime(pType)) {
-                        DateTimeOffset dtoValue = (DateTimeOffset)value;
-                        propertyInfo.SetValue(obj,DateTime.SpecifyKind(dtoValue.DateTime, DateTimeKind.Utc), index: null);
-                        return;
-                    }
-                    if (pType.IsValueType || pType.Name == "Byte[]" || pType.Name == "String")
-                    {
-                        propertyInfo.SetValue(obj, value, index: null);
-                    } else {
-                        object child = RuntimeHelpers.GetUninitializedObject(pType);
-                        ProcessObject(child, id, tableEntity);
-                    }
+                    propertyInfo.SetValue(obj, DateTime.SpecifyKind(dtoValue.DateTime, DateTimeKind.Utc));
+                    continue;
                 }
-            } else {
-                Type pType = propertyInfo.PropertyType;
-                if (!pType.IsValueType && pType.Name != "Byte[]" || pType.Name != "String") {
-                    if (HasChildObjectInformation(id,tableEntity)) {
-                        object child = RuntimeHelpers.GetUninitializedObject(pType);
-                        ProcessObject(child, id, tableEntity);
-                        propertyInfo.SetValue(obj, child, index: null);
-                    }
+
+                if (EntityMapping.IsPrimitiveTableType(pType))
+                {
+                    propertyInfo.SetValue(obj, value);
+                    continue;
                 }
+
+                object child = RuntimeHelpers.GetUninitializedObject(pType);
+                ProcessObject(child, entityName, tableEntity);
+                propertyInfo.SetValue(obj, child);
             }
-
-        });
-
+            else if (!EntityMapping.IsPrimitiveTableType(pType) && HasChildObjectInformation(entityName, tableEntity))
+            {
+                object child = RuntimeHelpers.GetUninitializedObject(pType);
+                ProcessObject(child, entityName, tableEntity);
+                propertyInfo.SetValue(obj, child);
+            }
+        }
     }
 
     private static bool HasChildObjectInformation(string id, TableEntity tableEntity)
     {
-        return tableEntity.Where(p=>p.Key.StartsWith(id+"_") && p.Value != null).Count() > 0;
+        return tableEntity.Any(p => p.Key.StartsWith(id + "_", StringComparison.Ordinal) && p.Value != null);
     }
 
-    private static string BuildEntityName(string? path, string id)
+    private static bool IsDateTime(Type pType)
     {
-        if (string.IsNullOrEmpty(path))
-        {
-            return id;
-        }
-        return path + "_" + id;
-    }
-    private static bool IsDateTime(Type pType) {
-        return pType.FullName == "System.DateTime" || Nullable.GetUnderlyingType(pType) == typeof(DateTime);
+        return pType == typeof(DateTime) || Nullable.GetUnderlyingType(pType) == typeof(DateTime);
     }
 }

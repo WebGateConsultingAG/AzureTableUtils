@@ -1,6 +1,5 @@
-using System;
-
 namespace WebGate.Azure.TableUtils.Converter;
+
 public interface IConverter
 {
     public bool IsType(Type type);

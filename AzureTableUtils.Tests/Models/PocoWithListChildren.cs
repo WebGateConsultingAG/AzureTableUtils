@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
-
 namespace WebGate.Azure.TableUtils.Test;
 
 public class PocoWihtListChildren
@@ -15,7 +11,7 @@ public class PocoWihtListChildren
         PocoWihtListChildren pwlc = new PocoWihtListChildren
         {
             Id = "0178301",
-            Children = new List<SimplePoco>()
+            Children = []
         };
         for (int i = 0; i < 3; i++)
         {

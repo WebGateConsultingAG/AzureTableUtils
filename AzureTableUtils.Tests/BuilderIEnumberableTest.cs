@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebGate.Azure.TableUtils;
-using Newtonsoft.Json;
-using Azure.Data.Tables;
-
 namespace WebGate.Azure.TableUtils.Test;
 
 [TestClass]
@@ -22,6 +15,5 @@ public class BuilderIEnumberableTest
 
         Assert.AreEqual(3, build.Children.Count);
         CollectionAssert.AreEqual(build.Children, pwlc.Children);
-
     }
 }
