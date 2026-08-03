@@ -21,7 +21,7 @@ dotnet add package WebGate.Azure.TableUtils
 The **NuGet package major version matches the .NET target framework major version**.
 
 - `net10.0` → package version `10.x.x`
-- A future uplift to `net11.0` would start at package version `11.0.0`
+- Future uplifts follow **.NET LTS** releases only (e.g. the next LTS after .NET 10); the package major then matches that TFM major.
 
 Within a major line, use minor/patch for library changes that stay on the same TFM.
 
