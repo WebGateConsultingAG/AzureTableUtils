@@ -32,12 +32,27 @@ public static class ObjectSerializer
 
             if (EntityMapping.IsPrimitiveTableType(valueType))
             {
-                entities.Add(EntityMapping.BuildEntityName(path, id), value);
+                entities.Add(EntityMapping.BuildEntityName(path, id), NormalizeTableValue(value));
             }
             else
             {
                 ProcessObject(value, EntityMapping.BuildEntityName(path, id), entities);
             }
         }
+    }
+
+    private static object NormalizeTableValue(object value)
+    {
+        if (value is DateTime dateTime)
+        {
+            return dateTime.Kind switch
+            {
+                DateTimeKind.Utc => dateTime,
+                DateTimeKind.Local => dateTime.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc),
+            };
+        }
+
+        return value;
     }
 }
