@@ -136,7 +136,7 @@ await tableClient.CreateIfNotExistsAsync();
 var typedTableClient = new TypedAzureTableClient<MyPoco>(tableClient);
 ```
 
-Underlying SDK client: `typedTableClient.TableClient`.
+Underlying SDK client: `typedTableClient.TableClient` (`GetTableClient()` is obsolete).
 
 Examples below use a client bound to `MyPoco`.
 
@@ -181,7 +181,7 @@ List<TableEntityResult<MyPoco>> pocos = await typedTableClient.GetAllByQueryAsyn
 
 OData filter string as supported by `TableClient.QueryAsync`. Pass `null` for an unfiltered query.
 
-### InsertOrMergeAsync(string rowKey, string partitionKey, T obj)
+### InsertOrMergeAsync(string rowKey, string partitionKey, object obj)
 
 ```csharp
 MyPoco poco = new MyPoco();
@@ -189,9 +189,9 @@ MyPoco poco = new MyPoco();
 Azure.Response result = await typedTableClient.InsertOrMergeAsync("001", "SimplePoco", poco);
 ```
 
-Upsert with `TableUpdateMode.Merge`.
+Upsert with `TableUpdateMode.Merge`. The parameter is `object` so partial DTOs (not necessarily `T`) can be merged.
 
-### InsertOrReplaceAsync(string rowKey, string partitionKey, T obj)
+### InsertOrReplaceAsync(string rowKey, string partitionKey, object obj)
 
 ```csharp
 MyPoco poco = new MyPoco();
@@ -231,7 +231,7 @@ multiEntityTableClient.RegisterType<MainWithParent>("mwp");
 multiEntityTableClient.RegisterType<PocoWithListChildren>();
 ```
 
-Underlying SDK client: `multiEntityTableClient.TableClient`.
+Underlying SDK client: `multiEntityTableClient.TableClient` (`GetTableClient()` is obsolete).
 
 Examples below assume `SimplePoco`, `MainWithParent`, and `PocoWithListChildren` are registered.
 

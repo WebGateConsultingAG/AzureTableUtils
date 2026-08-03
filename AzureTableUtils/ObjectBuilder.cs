@@ -61,9 +61,13 @@ public static class ObjectBuilder
         }
     }
 
-    private static bool HasChildObjectInformation(string id, TableEntity tableEntity) =>
-        tableEntity.Any(p => p.Key.StartsWith(id + "_", StringComparison.Ordinal) && p.Value != null);
+    private static bool HasChildObjectInformation(string id, TableEntity tableEntity)
+    {
+        return tableEntity.Any(p => p.Key.StartsWith(id + "_", StringComparison.Ordinal) && p.Value != null);
+    }
 
-    private static bool IsDateTime(Type pType) =>
-        pType == typeof(DateTime) || Nullable.GetUnderlyingType(pType) == typeof(DateTime);
+    private static bool IsDateTime(Type pType)
+    {
+        return pType == typeof(DateTime) || Nullable.GetUnderlyingType(pType) == typeof(DateTime);
+    }
 }

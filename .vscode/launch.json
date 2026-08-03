@@ -9,7 +9,7 @@
         "type": "coreclr",
         "request": "launch",
         "preLaunchTask": "build",
-        "program": "${workspaceFolder}/AzureTableUtils.Tests/bin/Debug/net8.0/AzureTableUtils.Tests.dll",
+        "program": "${workspaceFolder}/AzureTableUtils.Tests/bin/Debug/net10.0/AzureTableUtils.Tests.dll",
         "args": [],
         "cwd": "${workspaceFolder}/AzureTableUtils.Tests",
         "console": "internalConsole",

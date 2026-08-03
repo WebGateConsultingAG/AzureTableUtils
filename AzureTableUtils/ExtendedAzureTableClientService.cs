@@ -3,8 +3,8 @@ namespace WebGate.Azure.TableUtils;
 public class ExtendedAzureTableClientService(string connectionString)
 {
     private readonly string _connectionString = connectionString;
-    private Dictionary<Type, object> _tableClients = new();
-    private Dictionary<string, MultiEntityAzureTableClient> _meTableClients = new();
+    private readonly Dictionary<Type, object> _tableClients = [];
+    private readonly Dictionary<string, MultiEntityAzureTableClient> _meTableClients = [];
 
     public TypedAzureTableClient<T> CreateAndRegisterTableClient<T>(string tableName)
     {
