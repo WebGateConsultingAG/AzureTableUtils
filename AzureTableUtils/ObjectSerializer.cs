@@ -13,39 +13,31 @@ public static class ObjectSerializer
 
     private static void ProcessObject(object obj, string? path, IDictionary<string, object> entities)
     {
-        obj.GetType().GetProperties().Where(propertInfo => propertInfo.CanRead && propertInfo.CanWrite).ToList().ForEach(propertyInfo =>
+        foreach (var propertyInfo in EntityMapping.GetWritableProperties(obj.GetType()))
         {
             string id = propertyInfo.Name;
-            object? value = propertyInfo.GetValue(obj, index: null);
-            if (value != null)
+            object? value = propertyInfo.GetValue(obj);
+            if (value == null)
             {
-                IConverter? converter = ConverterFactory.FindConverter(value.GetType());
-                if (converter == null)
-                {
-                    if (value.GetType().IsValueType || value.GetType().Name == "Byte[]" || value.GetType().Name == "String")
-                    {
-                        entities.Add(BuildEntityName(path, id), value);
-                    }
-                    else
-                    {
-                        ProcessObject(value, BuildEntityName(path, id), entities);
-                    }
-                }
-                else
-                {
-                    string ep = converter.GetValue(propertyInfo.GetType(), value);
-                    entities.Add(BuildEntityName(path, id), ep);
-                }
+                continue;
             }
-        });
-    }
 
-    private static string BuildEntityName(string? path, string id)
-    {
-        if (string.IsNullOrEmpty(path))
-        {
-            return id;
+            Type valueType = value.GetType();
+            IConverter? converter = ConverterFactory.FindConverter(valueType);
+            if (converter != null)
+            {
+                entities.Add(EntityMapping.BuildEntityName(path, id), converter.GetValue(propertyInfo.PropertyType, value));
+                continue;
+            }
+
+            if (EntityMapping.IsPrimitiveTableType(valueType))
+            {
+                entities.Add(EntityMapping.BuildEntityName(path, id), value);
+            }
+            else
+            {
+                ProcessObject(value, EntityMapping.BuildEntityName(path, id), entities);
+            }
         }
-        return path + "_" + id;
     }
 }

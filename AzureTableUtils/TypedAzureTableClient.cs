@@ -21,13 +21,11 @@ public class TypedAzureTableClient<T>
 
     public async Task<List<TableEntityResult<T>>> GetAllAsync(string partitionKey)
     {
-        var query = $"PartitionKey eq '{partitionKey}'";
-        return await GetAllByQueryAsync(query);
+        return await GetAllByQueryAsync(ODataFilter.PartitionKeyEquals(partitionKey));
     }
 
     public async Task<List<TableEntityResult<T>>> GetAllByQueryAsync(string? query)
     {
-        //$"PartitionKey eq '{partitionKey}'"
         AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(query);
 
         List<TableEntityResult<T>> items = new();

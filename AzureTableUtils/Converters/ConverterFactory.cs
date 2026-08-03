@@ -2,22 +2,22 @@ namespace WebGate.Azure.TableUtils.Converter;
 
 public static class ConverterFactory
 {
-    private static List<IConverter>? converters = null;
+    private static readonly Lazy<List<IConverter>> Converters = new(InitConverters);
 
     public static IConverter? FindConverter(Type type)
     {
-        converters ??= InitConverters();
-        return converters.Find(converter => converter.IsType(type));
+        return Converters.Value.Find(converter => converter.IsType(type));
     }
 
     private static List<IConverter> InitConverters()
     {
-        List<IConverter> list = new List<IConverter>();
-        list.Add(new EnumConverter());
-        list.Add(new TimeSpanConverter());
-        list.Add(new DecimalConverter());
-        list.Add(new ArrayConverter());
-        list.Add(new EnumerableConverter());
-        return list;
+        return
+        [
+            new EnumConverter(),
+            new TimeSpanConverter(),
+            new DecimalConverter(),
+            new ArrayConverter(),
+            new EnumerableConverter()
+        ];
     }
 }

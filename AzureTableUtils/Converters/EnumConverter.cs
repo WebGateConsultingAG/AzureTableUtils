@@ -4,7 +4,7 @@ public class EnumConverter : IConverter
 {
     public bool IsType(Type type)
     {
-        return type.IsEnum;
+        return type.IsEnum || Nullable.GetUnderlyingType(type)?.IsEnum == true;
     }
 
     public string GetValue(Type type, object value)
@@ -18,7 +18,8 @@ public class EnumConverter : IConverter
         {
             return null;
         }
-        ;
-        return Enum.Parse(type, value);
+
+        Type enumType = Nullable.GetUnderlyingType(type) ?? type;
+        return Enum.Parse(enumType, value);
     }
 }

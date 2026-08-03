@@ -32,13 +32,11 @@ public class MultiEntityAzureTableClient
 
     public async Task<List<TableEntityResult<object>>> GetAllAsync(string partitionKey)
     {
-        var query = $"PartitionKey eq '{partitionKey}'";
-        return await GetAllByQueryAsync(query);
+        return await GetAllByQueryAsync(ODataFilter.PartitionKeyEquals(partitionKey));
     }
 
     public async Task<List<TableEntityResult<object>>> GetAllByQueryAsync(string? query)
     {
-        //$"PartitionKey eq '{partitionKey}'"
         AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(query);
 
         List<TableEntityResult<object>> items = new();
@@ -47,7 +45,7 @@ public class MultiEntityAzureTableClient
             Type? entityType = _typeRegistry.Where(kvp => item.RowKey.StartsWith(kvp.Value + "_")).Select(kvp => kvp.Key).FirstOrDefault();
             if (entityType == null)
             {
-                throw new ArgumentOutOfRangeException($"No registered type foung for Tableentry with ID {item.RowKey}.");
+                throw new ArgumentOutOfRangeException($"No registered type found for Tableentry with ID {item.RowKey}.");
             }
             items.Add(TableEntityResult<object>.BuildTableEntityResultWithType(entityType, item));
         }
