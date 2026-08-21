@@ -9,7 +9,7 @@
 
     <PackageId>WebGate.Azure.TableUtils</PackageId>
     <!-- Package major version matches the TargetFramework major (net10.0 → 10.x.x). -->
-    <Version>10.0.0</Version>
+    <Version>10.1.0</Version>
     <Authors>WebGate Consulting AG</Authors>
     <Company>WebGate Consulting AG</Company>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
