@@ -41,6 +41,30 @@ POCOs are mapped to Azure Table properties by reflection:
 
 ---
 
+## TableFilter
+
+Builds OData filter strings for `QueryAsync`. Property names are identifiers; values are Azure Tables literals (quotes escaped, `datetime'…'`, `guid'…'`, `true`/`false`, `42L`).
+
+```csharp
+var filter = TableFilter.And(
+    TableFilter.PartitionKeyEquals("MyPoco"),
+    TableFilter.Equal(nameof(MyPoco.Id), "001"),
+    TableFilter.LessThanOrEqual(nameof(MyPoco.DTOValue), DateTimeOffset.UtcNow));
+```
+
+| Method | Use |
+|---|---|
+| `Equal` / `NotEqual` / `GreaterThan` / `GreaterThanOrEqual` / `LessThan` / `LessThanOrEqual` | One method each; value type is formatted at runtime |
+| `Compare` / `FromValue` | `(property, comparison, object)` — `QueryComparisons.*` |
+| `And` / `Or` / `Combine` | `params` filters; empty/null parts are skipped. `Combine(TableOperators.*, ...)` |
+| `PartitionKeyEquals` / `RowKeyEquals` | Key filters with escaping |
+
+Dates take `DateTimeOffset` only. Convert `DateTime` with `TableDateTime.EnsureUtc` before building a `DateTimeOffset` (Unspecified is treated as already-UTC ticks). Use `EnsureUtc` on write paths as well — Azure.Data.Tables rejects `DateTimeKind.Unspecified`.
+
+Nested TableUtils columns use flattened names (`Parent_Child_Id`), not CLR navigation.
+
+---
+
 ## ExtendedAzureTableClientService
 
 Registers and resolves `TypedAzureTableClient<T>` and `MultiEntityAzureTableClient` instances.
@@ -138,7 +162,7 @@ var typedTableClient = new TypedAzureTableClient<MyPoco>(tableClient);
 
 Underlying SDK client: `typedTableClient.TableClient` (`GetTableClient()` is obsolete).
 
-Preferred 10.x surface: **upserts + gets** (serialize/deserialize). Use `TableClient` for deletes and other raw SDK calls.
+Preferred 10.x surface: **upserts + gets + `QueryAsync`** (serialize/deserialize). Build filters with `TableFilter`. Use `TableClient` for deletes and other raw SDK calls.
 
 Examples below use a client bound to `MyPoco`.
 
@@ -174,9 +198,18 @@ TableEntityResult<MyPoco>? poco = await typedTableClient.GetByIdAsync("9201u819"
 
 Returns `null` if not found.
 
-### GetAllByQueryAsync(string? query) — obsolete
+### QueryAsync(string? filter)
 
-Prefer `GetAllAsync` / `GetAllAsync(partitionKey)`. For custom OData filters, query with `TableClient.QueryAsync` and map via `TableEntityResult<T>.BuildTableEntityResult<T>(…)`.
+```csharp
+var filter = TableFilter.And(
+    TableFilter.Equal(nameof(MyPoco.Id), "001"),
+    TableFilter.LessThanOrEqual(nameof(MyPoco.DTOValue), DateTimeOffset.UtcNow));
+List<TableEntityResult<MyPoco>> pocos = await typedTableClient.QueryAsync(filter);
+```
+
+OData filter as supported by `TableClient.QueryAsync`. Build it with `TableFilter` (escaping, typed literals, `and` / `or`). Pass `null` or empty for an unfiltered query (same as `GetAllAsync()`).
+
+`GetAllByQueryAsync` is obsolete and forwards to `QueryAsync`.
 
 ### InsertOrMergeAsync(string rowKey, string partitionKey, object obj)
 
@@ -240,7 +273,7 @@ multiEntityTableClient.RegisterType<PocoWithListChildren>();
 
 Underlying SDK client: `multiEntityTableClient.TableClient` (`GetTableClient()` is obsolete).
 
-Preferred 10.x surface: **registry + upserts + gets** (+ `DeleteEntityByTypeAsync` for prefix-aware delete). Raw delete by full row key: `TableClient.DeleteEntityAsync`.
+Preferred 10.x surface: **registry + upserts + gets + `QueryAsync`** (+ `DeleteEntityByTypeAsync` for prefix-aware delete). Raw delete by full row key: `TableClient.DeleteEntityAsync`.
 
 Examples below assume `SimplePoco`, `MainWithParent`, and `PocoWithListChildren` are registered.
 
@@ -266,15 +299,15 @@ TableEntityResult<MyPoco>? poco = await multiEntityTableClient.GetByIdAsync<MyPo
 
 Resolves the stored row key as `{registeredPrefix}_{rowKey}`. Returns `null` if not found. Throws if `T` is not registered.
 
-### GetAllByQueryAsync(string? query)
+### QueryAsync(string? filter)
 
 ```csharp
-var query = $"PartitionKey eq '{partitionKey}'";
-List<TableEntityResult<object>> allPocos = await multiEntityTableClient.GetAllByQueryAsync(query);
+var filter = TableFilter.PartitionKeyEquals(partitionKey);
+List<TableEntityResult<object>> allPocos = await multiEntityTableClient.QueryAsync(filter);
 List<SimplePoco> simplePocos = allPocos.Select(res => res.Entity).OfType<SimplePoco>().ToList();
 ```
 
-OData filter as supported by `TableClient.QueryAsync`. Pass `null` for an unfiltered query. Needed here so row keys are still resolved via the type registry.
+OData filter as supported by `TableClient.QueryAsync`. Pass `null` or empty for an unfiltered query. Needed here so row keys are still resolved via the type registry. `GetAllByQueryAsync` is obsolete and forwards to `QueryAsync`.
 
 ### InsertOrMergeAsync\<T\>(string rowKey, string partitionKey, T obj)
 

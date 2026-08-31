@@ -9,7 +9,7 @@ namespace WebGate.Azure.TableUtils;
 /// <remarks>
 /// <para>
 /// Preferred surface in 10.x: <see cref="RegisterType{T}()"/>, upserts, <see cref="GetByIdAsync{T}"/>,
-/// <see cref="GetAllAsync()"/> / <see cref="GetAllAsync(string)"/> / <see cref="GetAllByQueryAsync"/>,
+/// <see cref="GetAllAsync()"/> / <see cref="GetAllAsync(string)"/> / <see cref="QueryAsync"/>,
 /// and <see cref="DeleteEntityByTypeAsync{T}"/>.
 /// Use <see cref="TableClient"/> for raw deletes by full row key and advanced SDK operations.
 /// </para>
@@ -95,7 +95,25 @@ public class MultiEntityAzureTableClient
     /// </exception>
     public async Task<List<TableEntityResult<object>>> GetAllAsync(string partitionKey)
     {
-        return await QueryAndMapAsync(ODataFilter.PartitionKeyEquals(partitionKey));
+        return await QueryAndMapAsync(TableFilter.PartitionKeyEquals(partitionKey));
+    }
+
+    /// <summary>
+    /// Returns entities matching an OData filter, deserialized via the type registry.
+    /// </summary>
+    /// <param name="filter">
+    /// OData filter as accepted by <see cref="TableClient.QueryAsync{T}(string, int?, IEnumerable{string}, CancellationToken)"/>.
+    /// Build with <see cref="TableFilter"/>. Pass <see langword="null"/> or empty to return all entities.
+    /// Needed here so row keys are still resolved via the type registry.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Matching rows; empty list if none match.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown if a row key does not start with any registered prefix.
+    /// </exception>
+    public async Task<List<TableEntityResult<object>>> QueryAsync(string? filter, CancellationToken cancellationToken = default)
+    {
+        return await QueryAndMapAsync(filter, cancellationToken);
     }
 
     /// <summary>
@@ -109,9 +127,10 @@ public class MultiEntityAzureTableClient
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown if a row key does not start with any registered prefix.
     /// </exception>
+    [Obsolete("Use QueryAsync(filter) for custom OData filters, or GetAllAsync / GetAllAsync(partitionKey).")]
     public async Task<List<TableEntityResult<object>>> GetAllByQueryAsync(string? query)
     {
-        return await QueryAndMapAsync(query);
+        return await QueryAsync(query);
     }
 
     /// <summary>
@@ -217,18 +236,19 @@ public class MultiEntityAzureTableClient
         return await _tableClient.DeleteEntityAsync(partitionKey, completeRowKey);
     }
 
-    private async Task<List<TableEntityResult<object>>> QueryAndMapAsync(string? query)
+    private async Task<List<TableEntityResult<object>>> QueryAndMapAsync(string? query, CancellationToken cancellationToken = default)
     {
-        AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(query);
+        string? filter = string.IsNullOrEmpty(query) ? null : query;
+        AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(filter, cancellationToken: cancellationToken);
 
         List<TableEntityResult<object>> items = [];
-        await foreach (var item in resultItems)
+        await foreach (var item in resultItems.WithCancellation(cancellationToken))
         {
             Type? entityType = _typeRegistry
                 .Where(registration => item.RowKey.StartsWith(registration.Value + "_"))
                 .Select(registration => registration.Key)
                 .FirstOrDefault();
-                
+
             if (entityType == null)
             {
                 throw new ArgumentOutOfRangeException($"No registered type found for Tableentry with ID {item.RowKey}.");

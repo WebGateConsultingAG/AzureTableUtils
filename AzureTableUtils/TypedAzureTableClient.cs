@@ -10,7 +10,8 @@ namespace WebGate.Azure.TableUtils;
 /// <remarks>
 /// <para>
 /// Preferred surface in 10.x: <see cref="InsertOrReplaceAsync"/>, <see cref="InsertOrMergeAsync"/>,
-/// <see cref="GetByIdAsync(string, string)"/>, <see cref="GetAllAsync()"/> / <see cref="GetAllAsync(string)"/>.
+/// <see cref="GetByIdAsync(string, string)"/>, <see cref="GetAllAsync()"/> / <see cref="GetAllAsync(string)"/>,
+/// and <see cref="QueryAsync"/> for custom <see cref="TableFilter"/> strings.
 /// Use <see cref="TableClient"/> for deletes and advanced SDK operations.
 /// </para>
 /// <para>
@@ -62,7 +63,21 @@ public class TypedAzureTableClient<T>
     /// <returns>Matching rows; empty list if none match.</returns>
     public async Task<List<TableEntityResult<T>>> GetAllAsync(string partitionKey)
     {
-        return await QueryAndMapAsync(ODataFilter.PartitionKeyEquals(partitionKey));
+        return await QueryAndMapAsync(TableFilter.PartitionKeyEquals(partitionKey));
+    }
+
+    /// <summary>
+    /// Returns entities matching an OData filter, deserialized as <typeparamref name="T"/>.
+    /// </summary>
+    /// <param name="filter">
+    /// OData filter as accepted by <see cref="TableClient.QueryAsync{T}(string, int?, IEnumerable{string}, CancellationToken)"/>.
+    /// Build with <see cref="TableFilter"/>. Pass <see langword="null"/> or empty to return all entities.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Matching rows; empty list if none match.</returns>
+    public async Task<List<TableEntityResult<T>>> QueryAsync(string? filter, CancellationToken cancellationToken = default)
+    {
+        return await QueryAndMapAsync(filter, cancellationToken);
     }
 
     /// <summary>
@@ -73,15 +88,10 @@ public class TypedAzureTableClient<T>
     /// Pass <see langword="null"/> to return all entities.
     /// </param>
     /// <returns>Matching rows; empty list if none match.</returns>
-    /// <remarks>
-    /// Prefer <see cref="GetAllAsync()"/> / <see cref="GetAllAsync(string)"/>.
-    /// For custom filters, query via <see cref="TableClient"/> and map with
-    /// <see cref="TableEntityResult{T}.BuildTableEntityResult{TCreate}"/>.
-    /// </remarks>
-    [Obsolete("Prefer GetAllAsync / GetAllAsync(partitionKey). For custom filters use TableClient.QueryAsync and TableEntityResult.BuildTableEntityResult.")]
+    [Obsolete("Use QueryAsync(filter) for custom OData filters, or GetAllAsync / GetAllAsync(partitionKey).")]
     public async Task<List<TableEntityResult<T>>> GetAllByQueryAsync(string? query)
     {
-        return await QueryAndMapAsync(query);
+        return await QueryAsync(query);
     }
 
     /// <summary>
@@ -187,12 +197,13 @@ public class TypedAzureTableClient<T>
         return await _tableClient.DeleteEntityAsync(partitionKey, rowKey);
     }
 
-    private async Task<List<TableEntityResult<T>>> QueryAndMapAsync(string? query)
+    private async Task<List<TableEntityResult<T>>> QueryAndMapAsync(string? query, CancellationToken cancellationToken = default)
     {
-        AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(query);
+        string? filter = string.IsNullOrEmpty(query) ? null : query;
+        AsyncPageable<TableEntity> resultItems = _tableClient.QueryAsync<TableEntity>(filter, cancellationToken: cancellationToken);
 
         List<TableEntityResult<T>> items = [];
-        await foreach (var item in resultItems)
+        await foreach (var item in resultItems.WithCancellation(cancellationToken))
         {
             items.Add(TableEntityResult<T>.BuildTableEntityResult<T>(item));
         }
