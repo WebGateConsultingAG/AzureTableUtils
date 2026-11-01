@@ -25,6 +25,54 @@ The **NuGet package major version matches the .NET target framework major versio
 
 Within a major line, use minor/patch for library changes that stay on the same TFM.
 
+**Project layout (since 10.1.3):** see [docs/architecture-table-utils.md](docs/architecture-table-utils.md).
+
+Public API XML documentation is generated into the NuGet (`GenerateDocumentationFile`); IntelliSense matches the types below.
+
+---
+
+## Contents
+
+- [Target Framework & Versioning](#target-framework--versioning)
+- [Modules](#modules)
+- [Quick start](#quick-start)
+- [Entity mapping](#entity-mapping)
+- [ExtendedAzureTableClientService](#extendedazuretableclientservice)
+- [TableEntityResult\<T\>](#tableentityresultt)
+- [TypedAzureTableClient\<T\>](#typedazuretableclientt)
+- [MultiEntityAzureTableClient](#multientityazuretableclient)
+- [Build & test](#build--test)
+- [Release notes (10.1.x)](#release-notes-101x)
+
+---
+
+## Modules
+
+| Folder (repo) | Namespace | Responsibility |
+|---------------|-----------|----------------|
+| `Clients/` | `WebGate.Azure.TableUtils` | `TypedAzureTableClient<T>`, `MultiEntityAzureTableClient` |
+| `Registry/` | `WebGate.Azure.TableUtils` | `ExtendedAzureTableClientService` |
+| `Query/` | `WebGate.Azure.TableUtils` | `TableFilter`, `TableQueryBatch`, `TableQueryTopSelect`, `TableRowKeys`, … |
+| `Mapping/` | `WebGate.Azure.TableUtils` | `ObjectSerializer`, `ObjectBuilder` |
+| `Converters/` | `WebGate.Azure.TableUtils.Converter` | Enum, decimal, JSON collection converters |
+| `Models/` | `WebGate.Azure.TableUtils.Models` | `TableEntityResult<T>` |
+
+---
+
+## Quick start
+
+```csharp
+var registry = new ExtendedAzureTableClientService(connectionString);
+var client = registry.CreateAndRegisterTableClient<MyRow>("myTable");
+
+await client.InsertOrReplaceAsync(rowKey, partitionKey, myRow);
+
+var filter = TableFilter.PartitionKeyEquals(partitionKey);
+List<MyRow> rows = await client.QueryEntitiesAsync(filter);
+```
+
+For custom OData, always build filters with `TableFilter` (typed literals, escaping). Use `TableClient` on the wrapper for deletes (`DeleteEntityAsync(partitionKey, rowKey)`).
+
 ---
 
 ## Entity mapping
@@ -161,6 +209,67 @@ List<TableEntityResult<MyPoco>> pocos = await typedTableClient.GetAllAsync("mypo
 
 All rows for the given partition key.
 
+### QueryAsync / TableFilter (10.1+)
+
+Build OData filters with `TableFilter` (typed literals, AND/OR):
+
+```csharp
+var filter = TableFilter.And(
+    TableFilter.PartitionKeyEquals("mypoco"),
+    TableFilter.Equal("Status", "Active"));
+List<TableEntityResult<MyPoco>> rows = await typedTableClient.QueryAsync(filter);
+List<MyPoco> entities = await typedTableClient.QueryEntitiesAsync(filter);
+```
+
+Optional early stop / page size:
+
+```csharp
+var options = new TableQueryOptions { MaxEntities = 50, MaxPerPage = 50 };
+List<MyPoco> newestByRowKey = await typedTableClient.QueryPartitionTakeAsync("DevMailCapture", take: 50);
+```
+
+When row keys are not time-ordered, top-N by a numeric column (partition scan):
+
+```csharp
+List<MyPoco> top = await typedTableClient.QueryTopByInPartitionAsync(
+    "DevMailCapture",
+    row => row.CreatedTick ?? 0,
+    take: 20,
+    descending: true);
+```
+
+Structured conditions:
+
+```csharp
+var conditions = new[] { new TableFilterCondition("Status", QueryComparisons.EQUAL, "Open") };
+string combined = TableFilter.CombineConditions(conditions, TableLogicalOperators.AND);
+```
+
+Large `IN`-style lookups (batched OR, avoids URL length limits):
+
+```csharp
+List<MyPoco> matches = await TableQueryBatch.QueryEqualsAnyAsync(
+    typedTableClient,
+    propertyName: "FileLinkId",
+    values: candidateIds,
+    batchSize: 15);
+```
+
+Time-ordered row keys (newest first when scanning by row key):
+
+```csharp
+string rowKey = TableRowKeys.BuildTimeOrderedDescending(DateTime.UtcNow, Guid.NewGuid().ToString("N"));
+```
+
+Stream without loading the full result set:
+
+```csharp
+await foreach (var row in typedTableClient.EnumerateAsync(filter, options))
+{
+    // ...
+}
+```
+
 ### GetByIdAsync(string id)
 
 ```csharp
@@ -179,7 +288,7 @@ Returns `null` if not found.
 
 ### GetAllByQueryAsync(string? query) — obsolete
 
-Prefer `GetAllAsync` / `GetAllAsync(partitionKey)`. For custom OData filters, query with `TableClient.QueryAsync` and map via `TableEntityResult<T>.BuildTableEntityResult<T>(…)`.
+Prefer `QueryAsync` / `QueryEntitiesAsync` with `TableFilter`. See **QueryAsync / TableFilter** above.
 
 ### InsertOrMergeAsync(string rowKey, string partitionKey, object obj)
 
@@ -272,8 +381,8 @@ Resolves the stored row key as `{registeredPrefix}_{rowKey}`. Returns `null` if 
 ### GetAllByQueryAsync(string? query)
 
 ```csharp
-var query = $"PartitionKey eq '{partitionKey}'";
-List<TableEntityResult<object>> allPocos = await multiEntityTableClient.GetAllByQueryAsync(query);
+var filter = TableFilter.PartitionKeyEquals(partitionKey);
+List<TableEntityResult<object>> allPocos = await multiEntityTableClient.GetAllByQueryAsync(filter);
 List<SimplePoco> simplePocos = allPocos.Select(res => res.Entity).OfType<SimplePoco>().ToList();
 ```
 
@@ -320,6 +429,32 @@ await multiEntityTableClient.DeleteEntityAsync(result.RowKey, result.PartitionKe
 // new:
 await multiEntityTableClient.TableClient.DeleteEntityAsync(result.PartitionKey, result.RowKey);
 ```
+
+---
+
+## Build & test
+
+From the repository root:
+
+```bash
+dotnet build AzureTableUtils.sln -c Release
+dotnet test AzureTableUtils.Tests/AzureTableUtils.Tests.csproj -c Release
+```
+
+Integration tests (`AzureTableUtils.IntegrationTests`) require Azurite or a development storage connection string and optional `test.runsettings` (see project README in repo if present).
+
+---
+
+## Release notes (10.1.x)
+
+| Version | Highlights |
+|---------|------------|
+| **10.1.3** | Thematic folders (`Clients/`, `Query/`, `Mapping/`, …); test layout; no public namespace breaking changes. |
+| **10.1.2** | `TableFilterCondition`, `TableQueryBatch`, `TableRowKeys`, `EnumerateAsync` / `QueryEntitiesAsync`, partition take & top-by helpers; `TypedAzureTableClient<T> where T : class`. |
+| **10.1.1** | `TableFilter`, `TableQueryOptions`, `TableQueryTopSelect`, extended `QueryAsync` overload. |
+| **10.1.0** | .NET 10 uplift; package major aligned with TFM. |
+
+Patch releases keep existing `WebGate.Azure.TableUtils` namespaces for NuGet consumers.
 
 ---
 
