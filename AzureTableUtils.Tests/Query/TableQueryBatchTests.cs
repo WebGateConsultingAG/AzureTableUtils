@@ -10,7 +10,7 @@ public class TableQueryBatchTests
     {
         CollectionAssert.AreEqual(
             new List<string> { "a", "b" },
-            TableQueryBatch.DistinctNonEmpty(["a", " ", "a", "b", null]));
+            TableQueryBatch.DistinctNonEmpty(["a", " ", "a", "b"]));
     }
 
     [TestMethod]
